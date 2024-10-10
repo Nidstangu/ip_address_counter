@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 )
 
 var addressBatchNameToFileMap map[string]*os.File
@@ -41,37 +40,38 @@ func main() {
 		}
 		index := ipIndex(line)
 		if _, ok := addressBatchNameToFileMap[fmt.Sprintf("tmp/address_batch_%v", index)]; !ok {
-			initializeBatch(index, line)
-			continue
+			if _, ok := addressBatchNameToFileMap[fmt.Sprintf("tmp/address_batch_%v", index)]; !ok {
+				initializeBatch(index, line)
+				continue
+			}
+			addToBatch(index, line)
 		}
-		addToBatch(index, line)
+		uniqueAddressCount := 0
+		// count and clean up
+		for k, v := range addressBatchNameToFileMap {
+			count := counter(k)
+			uniqueAddressCount += count
+			v.Close()
+			os.Remove(k)
+		}
+		fmt.Println("Unique Addresses:", uniqueAddressCount)
 	}
-	uniqueAddressCount := 0
-	// count and clean up
-	for k, v := range addressBatchNameToFileMap {
-		count := counter(k)
-		uniqueAddressCount += count
-		v.Close()
-		os.Remove(k)
+
+	func ipIndex(ip string) string {
+		strArr := strings.Split(ip, ".")
+		return strArr[0]
 	}
-	fmt.Println("Unique Addresses:", uniqueAddressCount)
-}
 
-func ipIndex(ip string) string {
-	strArr := strings.Split(ip, ".")
-	return strArr[0]
-}
-
-func initializeBatch(index string, ip string) {
-	batch, err := os.Create(fmt.Sprintf("tmp/address_batch_%v", index))
-	if err != nil {
-		fmt.Println(err)
+	func initializeBatch(index string, ip string) {
+		batch, err := os.Create(fmt.Sprintf("tmp/address_batch_%v", index))
+		if err != nil {
+			fmt.Println(err)
+		}
+		addressBatchNameToFileMap[batch.Name()] = batch
+		batch.WriteString(ip)
 	}
-	addressBatchNameToFileMap[batch.Name()] = batch
-	batch.WriteString(ip)
-}
 
-func addToBatch(index string, ip string) {
-	batch := addressBatchNameToFileMap[fmt.Sprintf("tmp/address_batch_%v", index)]
-	batch.WriteString(ip)
-}
+	func addToBatch(index string, ip string) {
+		batch := addressBatchNameToFileMap[fmt.Sprintf("tmp/address_batch_%v", index)]
+		batch.WriteString(ip)
+	}
