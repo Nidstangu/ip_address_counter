@@ -16,7 +16,7 @@ type FourDimensionalMapWithMutex struct {
 
 var mapWithMutex FourDimensionalMapWithMutex
 
-const BatchSize = 100000        // specify batch size for each routine
+const BatchSize = 5             // specify batch size for each routine
 const MaxConcurrentRoutines = 8 // specify how many routines you want to spawnx
 
 func counter(fileName string) int {
